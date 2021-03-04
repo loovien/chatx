@@ -1,4 +1,4 @@
-package com.example.chat.server;
+package com.example.chat;
 
 import com.example.chat.tcp.ChatTcpDecoder;
 import com.example.chat.tcp.ChatTcpEncoder;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 public class ChatTcpApplication implements ApplicationRunner {
+
     final ChatInitializr chatInitializr;
 
     @Autowired
@@ -23,7 +24,7 @@ public class ChatTcpApplication implements ApplicationRunner {
     }
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         ServerBootstrap serverBootstrap = new ServerBootstrap()
                 .group(chatInitializr.getMaster(), chatInitializr.getWorker())
                 .channel(NioServerSocketChannel.class)
@@ -40,7 +41,14 @@ public class ChatTcpApplication implements ApplicationRunner {
         String addr = chatInitializr.getTcpOps().getAddr();
         Integer port = chatInitializr.getTcpOps().getPort();
         log.info("tcp server listen at: {}：{}", addr, port);
-        ChannelFuture channelFuture = serverBootstrap.bind(addr, port).sync();
-        channelFuture.channel().closeFuture();
+        try {
+            ChannelFuture channelFuture = serverBootstrap.bind(addr, port).sync();
+            channelFuture.channel().closeFuture().sync();
+        } catch (InterruptedException e) {
+            log.error("receive interrupter signal: {}", e.getMessage());
+        } finally {
+            chatInitializr.getMaster().shutdownGracefully();
+            chatInitializr.getWorker().shutdownGracefully();
+        }
     }
 }

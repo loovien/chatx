@@ -2,11 +2,13 @@ package com.example.chat.tcp;
 
 import com.example.chat.dto.BizDTO;
 import com.example.chat.exception.BizException;
-import com.example.chat.handlers.Handlers;
-import com.example.chat.server.ChatInitializr;
+import com.example.chat.exception.NotAuthException;
+import com.example.chat.controller.handlers.Handlers;
+import com.example.chat.ChatInitializr;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
@@ -29,18 +31,28 @@ public class ChatTcpHandler extends SimpleChannelInboundHandler<BizDTO> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, BizDTO msg) throws Exception {
-        String result = null;
+        Handlers bizHandlerClazz = null;
+        byte[] resultBytes = null;
+        Channel channel = ctx.channel();
         try {
-            if (msg.getBiz() == Handlers.HANDLER_LOGIN.getBiz()) {
-                result = Handlers.HANDLER_LOGIN.getHandlerClass()
+            if (msg.getBiz() == Handlers.HANDLER_LOGIN.getBiz()) { // first authority
+                resultBytes = Handlers.HANDLER_LOGIN.getHandlerClass()
                         .getConstructor(ChatInitializr.class)
-                        .newInstance(chatInitializr).handler(msg);
-                msg.setBody(result.getBytes(StandardCharsets.UTF_8));
-                ctx.writeAndFlush(msg);
+                        .newInstance(chatInitializr).handler(ctx, msg)
+                        .getBytes(StandardCharsets.UTF_8);
+
+                if (resultBytes.length <= 0) {
+                    msg.setLength(resultBytes.length);
+                    msg.setBody(resultBytes);
+                    ctx.writeAndFlush(msg);
+                }
                 return;
             }
+            if (!channel.hasAttr(AttributeKey.valueOf(channel.id().asLongText()))) {
+                log.error("channe: {} communicate without authorization information", channel.id().asLongText());
+                throw new NotAuthException();
+            }
             Handlers[] handlers = Handlers.values();
-            Handlers bizHandlerClazz = null;
             for (Handlers handler : handlers) {
                 if (msg.getBiz() == handler.getBiz()) {
                     bizHandlerClazz = handler;
@@ -52,9 +64,13 @@ public class ChatTcpHandler extends SimpleChannelInboundHandler<BizDTO> {
                 ctx.channel().close();
                 return;
             }
-            result = bizHandlerClazz.getHandlerClass()
+            resultBytes = bizHandlerClazz.getHandlerClass()
                     .getConstructor(ChatInitializr.class)
-                    .newInstance(chatInitializr).handler(msg);
+                    .newInstance(chatInitializr).handler(ctx, msg)
+                    .getBytes(StandardCharsets.UTF_8);
+        } catch (NotAuthException exception) {
+            log.error("communicate required auth first. err: {}", exception.getMessage());
+            ctx.close(); // close channel
         } catch (BizException bizException) {
             log.error("biz handler failure: {}", bizException.getMessage());
         } catch (Exception exception) {
@@ -62,10 +78,12 @@ public class ChatTcpHandler extends SimpleChannelInboundHandler<BizDTO> {
             log.error("fatal exception: {}", exception.getMessage());
             throw exception;
         }
-        if (result == null || result.equals("")) {
+        if (resultBytes == null || resultBytes.length <= 0) {
+            log.info("handler: {} return empty.", bizHandlerClazz);
             return;
         }
-        msg.setBody(result.getBytes(StandardCharsets.UTF_8));
+        msg.setLength(resultBytes.length);
+        msg.setBody(resultBytes);
         log.info("send response to channel: {}", msg);
         ctx.writeAndFlush(msg);
     }

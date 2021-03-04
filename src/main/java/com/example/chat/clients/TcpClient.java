@@ -17,11 +17,10 @@ public class TcpClient {
     public static class TcpClientHandler extends SimpleChannelInboundHandler<BizDTO> {
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            byte[] body = "{\"name\":\"luowen\",\"uid\": 1,\"token\":\"admin\"}".getBytes(StandardCharsets.UTF_8);
+            byte[] body = "{\"name\":\"luowen\",\"uid\": 1,\"token\":\"admin1\"}".getBytes(StandardCharsets.UTF_8);
             BizDTO bizDto = BizDTO.builder().length(body.length).biz(1).version(0).body(body).build();
             log.info("send to server: {}", new String(body));
             ctx.writeAndFlush(bizDto);
-            super.channelActive(ctx);
         }
 
         @Override
@@ -33,7 +32,8 @@ public class TcpClient {
 
 
     public static void main(String[] args) throws InterruptedException {
-        Bootstrap bootstrap = new Bootstrap().group(new NioEventLoopGroup(1))
+        NioEventLoopGroup eventExecutors = new NioEventLoopGroup(2);
+        Bootstrap bootstrap = new Bootstrap().group(eventExecutors)
                 .channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<Channel>() {
                     @Override
@@ -46,7 +46,8 @@ public class TcpClient {
                 }).option(ChannelOption.SO_KEEPALIVE, true);
 
         ChannelFuture localhost = bootstrap.connect("0.0.0.0", 8000).sync();
-        localhost.channel().closeFuture();
+        localhost.channel().closeFuture().sync();
+        eventExecutors.shutdownGracefully();
     }
 
 }

@@ -1,4 +1,4 @@
-package com.example.chat.server;
+package com.example.chat;
 
 import com.example.chat.configs.Opts;
 import com.example.chat.configs.TcpOps;
@@ -31,7 +31,7 @@ public class ChatInitializr {
 
     private final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
-    private final ConcurrentHashMap<String, AuthDTO> userSocket = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, AuthDTO> userSocket = new ConcurrentHashMap<>();
 
     public ChatInitializr(Opts opts, TcpOps tcpOps) {
         this.opts = opts;

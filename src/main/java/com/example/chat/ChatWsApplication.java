@@ -1,4 +1,4 @@
-package com.example.chat.server;
+package com.example.chat;
 
 public class ChatWsApplication {
 }
