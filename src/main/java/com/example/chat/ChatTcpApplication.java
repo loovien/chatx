@@ -16,11 +16,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class ChatTcpApplication implements ApplicationRunner {
 
-    final ChatInitializr chatInitializr;
+    private final ChatInitializr chatInitializr;
+
+    private final ChatTcpHandler chatTcpHandler;
 
     @Autowired
-    public ChatTcpApplication(ChatInitializr chatInitializr) {
+    public ChatTcpApplication(ChatInitializr chatInitializr, ChatTcpHandler chatTcpHandler) {
         this.chatInitializr = chatInitializr;
+        this.chatTcpHandler = chatTcpHandler;
     }
 
     @Override
@@ -34,7 +37,7 @@ public class ChatTcpApplication implements ApplicationRunner {
                         ChannelPipeline channelPipeline = ch.pipeline();
                         channelPipeline.addLast(new ChatTcpDecoder());
                         channelPipeline.addLast(new ChatTcpEncoder());
-                        channelPipeline.addLast(new ChatTcpHandler(chatInitializr));
+                        channelPipeline.addLast(chatTcpHandler);
                     }
                 }).option(ChannelOption.SO_BACKLOG, 1024 * 1024)
                 .childOption(ChannelOption.SO_KEEPALIVE, true);

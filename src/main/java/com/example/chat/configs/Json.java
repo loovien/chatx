@@ -7,7 +7,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 
 public class Json {
     private final static ObjectMapper objectMapper = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false)
+            .disable(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .setPropertyNamingStrategy(PropertyNamingStrategy.LOWER_CAMEL_CASE)
             .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
 

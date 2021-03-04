@@ -2,7 +2,6 @@ package com.example.chat;
 
 import com.example.chat.configs.Opts;
 import com.example.chat.configs.TcpOps;
-import com.example.chat.dto.AuthDTO;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -31,7 +30,7 @@ public class ChatInitializr {
 
     private final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
-    private final ConcurrentHashMap<Integer, AuthDTO> userSocket = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, String> userSocket = new ConcurrentHashMap<>();
 
     public ChatInitializr(Opts opts, TcpOps tcpOps) {
         this.opts = opts;

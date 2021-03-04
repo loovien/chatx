@@ -1,31 +1,40 @@
 package com.example.chat.tcp;
 
 import com.example.chat.dto.BizDTO;
+import com.example.chat.dto.UserDTO;
 import com.example.chat.exception.BizException;
 import com.example.chat.exception.NotAuthException;
 import com.example.chat.controller.handlers.Handlers;
 import com.example.chat.ChatInitializr;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
+@Component
+@ChannelHandler.Sharable
 public class ChatTcpHandler extends SimpleChannelInboundHandler<BizDTO> {
-    private final ChatInitializr chatInitializr;
 
-    public ChatTcpHandler(ChatInitializr chatInitializr) {
+    private final ChatInitializr chatInitializr;
+    private final ApplicationContext applicationContext;
+
+    public ChatTcpHandler(ChatInitializr chatInitializr, ApplicationContext applicationContext) {
         this.chatInitializr = chatInitializr;
+        this.applicationContext = applicationContext;
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         Channel channel = ctx.channel();
-        log.info("client address: {} connected channel id: {}", channel.remoteAddress().toString(), channel.id());
-        chatInitializr.getChannels().add(ctx.channel());
+        log.info("client address: {} connected channel id: {}", channel.remoteAddress(), channel.id().asLongText());
         super.channelActive(ctx);
     }
 
@@ -36,11 +45,9 @@ public class ChatTcpHandler extends SimpleChannelInboundHandler<BizDTO> {
         Channel channel = ctx.channel();
         try {
             if (msg.getBiz() == Handlers.HANDLER_LOGIN.getBiz()) { // first authority
-                resultBytes = Handlers.HANDLER_LOGIN.getHandlerClass()
-                        .getConstructor(ChatInitializr.class)
-                        .newInstance(chatInitializr).handler(ctx, msg)
+                resultBytes = applicationContext.getBean(Handlers.HANDLER_LOGIN.getHandlerClass())
+                        .handler(ctx, msg)
                         .getBytes(StandardCharsets.UTF_8);
-
                 if (resultBytes.length <= 0) {
                     msg.setLength(resultBytes.length);
                     msg.setBody(resultBytes);
@@ -49,7 +56,7 @@ public class ChatTcpHandler extends SimpleChannelInboundHandler<BizDTO> {
                 return;
             }
             if (!channel.hasAttr(AttributeKey.valueOf(channel.id().asLongText()))) {
-                log.error("channe: {} communicate without authorization information", channel.id().asLongText());
+                log.error("channel: {} communicate without authorization information", channel.id().asLongText());
                 throw new NotAuthException();
             }
             Handlers[] handlers = Handlers.values();
@@ -64,10 +71,8 @@ public class ChatTcpHandler extends SimpleChannelInboundHandler<BizDTO> {
                 ctx.channel().close();
                 return;
             }
-            resultBytes = bizHandlerClazz.getHandlerClass()
-                    .getConstructor(ChatInitializr.class)
-                    .newInstance(chatInitializr).handler(ctx, msg)
-                    .getBytes(StandardCharsets.UTF_8);
+            resultBytes = applicationContext.getBean(bizHandlerClazz.getHandlerClass())
+                    .handler(ctx, msg).getBytes(StandardCharsets.UTF_8);
         } catch (NotAuthException exception) {
             log.error("communicate required auth first. err: {}", exception.getMessage());
             ctx.close(); // close channel
@@ -93,5 +98,16 @@ public class ChatTcpHandler extends SimpleChannelInboundHandler<BizDTO> {
         log.error("exception: {}", cause.getMessage());
         cause.printStackTrace();
         ctx.channel().close();
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        Channel channel = ctx.channel();
+        String socketId = channel.id().asLongText();
+        UserDTO userDTO = (UserDTO) channel.attr(AttributeKey.valueOf(socketId)).get();
+        if (userDTO == null) {
+            return;
+        }
+        chatInitializr.getUserSocket().remove(userDTO.getUid());
     }
 }

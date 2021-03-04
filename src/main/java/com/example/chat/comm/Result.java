@@ -44,4 +44,8 @@ public class Result<T> {
         return null;
     }
 
+    public static <T> String wrapEmptyResult() {
+        return "";
+    }
+
 }

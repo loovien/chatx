@@ -7,11 +7,15 @@ import com.example.chat.dto.UserDTO;
 import com.example.chat.exception.NotAuthException;
 import com.example.chat.ChatInitializr;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Controller;
 
 @Slf4j
+@Controller
+@ChannelHandler.Sharable
 public class UserController extends AbstractController implements Handler {
     public UserController(ChatInitializr initializr) {
         super(initializr);
@@ -25,7 +29,9 @@ public class UserController extends AbstractController implements Handler {
             throw new NotAuthException();
         }
         Channel channel = ctx.channel();
-        channel.attr(AttributeKey.valueOf(channel.id().asLongText())).set(userDTO);
+        String socketId = channel.id().asLongText();
+        channel.attr(AttributeKey.valueOf(socketId)).set(userDTO);
+        initializr.getChannels().add(channel);
         return Result.wrapOkResult(null);
     }
 }
