@@ -11,7 +11,10 @@
 
 #### 简介
 
-cd 一个学习 netty 框架通信的项目。 (基于netty 实现的聊天DEMO, tcp 链接和 websocket实现互通)
+一个学习 netty 框架通信的项目。 (基于netty 实现的聊天DEMO, tcp 链接和 websocket实现互通)
+
+```bash
+
 
 tcp       ---> 
               |
@@ -19,8 +22,11 @@ tcp       --->
               |
 websocket --->
 
+```
+
 目录如下：
 
+```bash
 ---chat
     |   ChatApplication.java  // springboot 启动
     |   ChatInitializr.java   // chatx 初始化的一些信息
@@ -67,6 +73,7 @@ websocket --->
             Tcp2WsEncoder.java // tcp => websocket 编码
             WebSocketFrameHandler.java // websocket 主 handler
             
+```
             
 #### 简单使用
 
