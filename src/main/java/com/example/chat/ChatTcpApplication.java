@@ -6,13 +6,18 @@ import com.example.chat.tcp.ChatTcpHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE + 50)
 @Component
 public class ChatTcpApplication implements ApplicationRunner {
 
@@ -28,9 +33,14 @@ public class ChatTcpApplication implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        new Thread(this::boot).start();
+    }
+
+    private void boot() {
         ServerBootstrap serverBootstrap = new ServerBootstrap()
                 .group(chatInitializr.getMaster(), chatInitializr.getWorker())
                 .channel(NioServerSocketChannel.class)
+                .handler(new LoggingHandler(LogLevel.INFO))
                 .childHandler(new ChannelInitializer<Channel>() {
                     @Override
                     protected void initChannel(Channel ch) throws Exception {

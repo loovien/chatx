@@ -2,6 +2,7 @@ package com.example.chat;
 
 import com.example.chat.configs.Opts;
 import com.example.chat.configs.TcpOps;
+import com.example.chat.configs.WsOpts;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -24,6 +25,8 @@ public class ChatInitializr {
 
     private final TcpOps tcpOps;
 
+    private final WsOpts wsOpts;
+
     private EventLoopGroup master;
 
     private EventLoopGroup worker;
@@ -32,11 +35,12 @@ public class ChatInitializr {
 
     private final ConcurrentHashMap<Integer, String> userSocket = new ConcurrentHashMap<>();
 
-    public ChatInitializr(Opts opts, TcpOps tcpOps) {
+    public ChatInitializr(Opts opts, TcpOps tcpOps, WsOpts wsOpts) {
         this.opts = opts;
         this.tcpOps = tcpOps;
         this.master = new NioEventLoopGroup(opts.getMasterThreadNum());
         this.worker = new NioEventLoopGroup(opts.getWorkThreadNum());
+        this.wsOpts = wsOpts;
     }
 
 }

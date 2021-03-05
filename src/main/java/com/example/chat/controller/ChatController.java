@@ -30,7 +30,7 @@ public class ChatController extends AbstractController implements Handler {
     public String handler(ChannelHandlerContext ctx, BizDTO bizDTO) throws Exception {
         try {
             ChatDTO chatDTO = objectMapper.readValue(bizDTO.getBody(), ChatDTO.class);
-            log.info("receive chat message: {}", chatDTO);
+            log.info("receive chat message: {}, broadcast to: {}", chatDTO, initializr.getChannels().size());
             broadcast(bizDTO);
         } catch (IOException e) {
             log.error("channel receive data error: {}", new String(bizDTO.getBody()));

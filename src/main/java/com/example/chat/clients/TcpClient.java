@@ -2,21 +2,15 @@ package com.example.chat.clients;
 
 import com.example.chat.controller.handlers.Handlers;
 import com.example.chat.dto.BizDTO;
-import com.example.chat.dto.ChatDTO;
-import com.example.chat.dto.UserDTO;
 import com.example.chat.tcp.ChatTcpDecoder;
 import com.example.chat.tcp.ChatTcpEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.concurrent.GlobalEventExecutor;
-import io.netty.util.concurrent.SingleThreadEventExecutor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -35,9 +29,10 @@ public class TcpClient {
             log.info("send to server: {}", new String(body));
             ctx.writeAndFlush(bizDto);
             // every five second send hi message
-            /* executorService.scheduleWithFixedDelay(() -> {
+            executorService.scheduleWithFixedDelay(() -> {
                 log.info("==========> send 'hello chatx!' to server.");
-                byte[] chatMsg = "{\"message\":\"luowen\", \"chatAt\":\"2021-03-05 12:39:00\"}"
+//                String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                byte[] chatMsg = "{\"message\":\"luowen\", \"chatAt\":\"2021-03-05 15:32:00\"}"
                         .getBytes(StandardCharsets.UTF_8);
                 BizDTO chatDto = BizDTO.builder()
                         .length(chatMsg.length)
@@ -46,7 +41,7 @@ public class TcpClient {
                         .body(chatMsg)
                         .build();
                 ctx.writeAndFlush(chatDto);
-            }, 0, 5, TimeUnit.SECONDS); */
+            }, 0, 5, TimeUnit.SECONDS);
         }
 
 
@@ -57,8 +52,8 @@ public class TcpClient {
         }
 
         @Override
-        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            super.channelInactive(ctx);
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+            ctx.close();
             executorService.shutdown();
         }
     }
